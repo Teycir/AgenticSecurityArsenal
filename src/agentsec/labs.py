@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+
 @dataclass
 class Finding:
     id: str
@@ -87,7 +88,7 @@ def _rag_memory_poisoning() -> list[Finding]:
         "Preserve provenance and trust labels; do not promote retrieved content into policy. "
         "Require authorization checks at the data/tool boundary.")]
 
-SCENARIOS = {
+SCENARIOS: dict[str, tuple[str, callable[[], list[Finding]]]] = {
     "excessive-tool-permissions": ("Excessive tool permissions", _excessive_permissions),
     "tenant-isolation": ("Tenant isolation failure", _tenant_isolation),
     "confused-deputy": ("Confused deputy", _confused_deputy),
@@ -95,26 +96,47 @@ SCENARIOS = {
     "rag-memory-poisoning": ("RAG and memory poisoning", _rag_memory_poisoning),
 }
 
+
 def list_scenarios() -> list[dict[str, str]]:
     return [{"id": key, "name": name, "execution": "local deterministic simulation"}
             for key, (name, _) in SCENARIOS.items()]
 
-def run_labs(scenario: str | None = None) -> dict[str, Any]:
+def run_labs(scenario: str | None = None) -> dict[str, object]:
     selected = [scenario] if scenario else list(SCENARIOS)
     unknown = [item for item in selected if item not in SCENARIOS]
-    if unknown: raise ValueError("Unknown lab scenario(s): " + ", ".join(unknown))
-    findings, outcomes = [], []
+    if unknown:
+        raise ValueError("Unknown lab scenario(s): " + ", ".join(unknown))
+    findings: list[Finding] = []
+    outcomes: list[dict[str, object]] = []
     for key in selected:
         name, evaluator = SCENARIOS[key]
         detected = evaluator()
         findings.extend(detected)
-        outcomes.append({"scenario": key, "name": name,
-                         "status": "vulnerable" if detected else "no-finding",
-                         "finding_count": len(detected)})
-    return {"schema_version": "1.0", "product": "Agentic Security Arsenal",
-            "module": "local-labs", "execution_mode": "deterministic-local-simulation",
-            "network_access": False, "external_services": False, "synthetic_data_only": True,
-            "scenarios": outcomes, "findings": [asdict(f) for f in findings],
-            "summary": {"scenarios_run": len(outcomes), "findings": len(findings),
-                        "by_severity": {s: sum(1 for f in findings if f.severity == s)
-                                        for s in ("critical", "high", "medium", "low", "info")}}}
+        outcomes.append(
+            {
+                "scenario": key,
+                "name": name,
+                "status": "vulnerable" if detected else "no-finding",
+                "finding_count": len(detected),
+            }
+        )
+    return {
+        "schema_version": "1.0",
+        "product": "Agentic Security Arsenal",
+        "module": "local-labs",
+        "execution_mode": "deterministic-local-simulation",
+        "network_access": False,
+        "external_services": False,
+        "synthetic_data_only": True,
+        "scenarios": outcomes,
+        "findings": [asdict(f) for f in findings],
+        "summary": {
+            "scenarios_run": len(outcomes),
+            "findings": len(findings),
+            "by_severity": {
+                s: sum(1 for f in findings if f.severity == s)
+                for s in ("critical", "high", "medium", "low", "info")
+            },
+        },
+    }
+

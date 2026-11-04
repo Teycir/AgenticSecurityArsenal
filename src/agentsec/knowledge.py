@@ -8,7 +8,10 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-class KnowledgeError(ValueError): pass
+
+class KnowledgeError(ValueError):
+    """Raised when an untrusted reference cannot be imported or inspected."""
+
 
 def _read_source(source: str) -> tuple[str, str]:
     if source.startswith(('https://','http://')):

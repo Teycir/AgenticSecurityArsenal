@@ -1,8 +1,8 @@
 import json
-from pathlib import Path
+
+from agentsec.assessment import create_assessment, run_assessment
 from agentsec.knowledge import extract_knowledge
 from agentsec.scenarios import generate_scenarios, validate_scenarios
-from agentsec.assessment import create_assessment, run_assessment, compare_assessments
 
 
 def test_knowledge_to_scenario_pipeline(tmp_path):

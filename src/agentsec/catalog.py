@@ -11,11 +11,11 @@ def load_catalog(path: str | Path | None = None) -> list[dict]:
     catalog_path = Path(path) if path else DEFAULT_CATALOG
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
-        raise ValueError("Technique catalog must be a JSON array")
+        raise TypeError("Technique catalog must be a JSON array")
     seen: set[str] = set()
     for index, item in enumerate(data):
         if not isinstance(item, dict):
-            raise ValueError(f"Catalog entry {index} must be an object")
+            raise TypeError(f"Catalog entry {index} must be an object")
         missing = REQUIRED_FIELDS - item.keys()
         if missing:
             raise ValueError(f"Catalog entry {index} is missing: {', '.join(sorted(missing))}")

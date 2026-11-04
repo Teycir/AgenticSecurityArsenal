@@ -6,12 +6,12 @@ import os
 import sys
 from pathlib import Path
 
-from agentsec.assessment import create_assessment, run_assessment
+from agentsec.assessment import compare_assessments, create_assessment, run_assessment
 from agentsec.catalog import filter_catalog, load_catalog, render_catalog
 from agentsec.evaluations import list_evaluations, run_evaluations
 from agentsec.findings import analyze_mcp_inventory, compare_reports
-from agentsec.labs import list_scenarios, run_labs
 from agentsec.knowledge import extract_knowledge
+from agentsec.labs import list_scenarios, run_labs
 from agentsec.mcp_http import MCPHTTPError, inspect_http_server
 from agentsec.mcp_inspector import (
     MCPInspectionError,
@@ -87,47 +87,92 @@ def main() -> int:
     knowledge_parser = sub.add_parser("knowledge", help="Import untrusted CTF/writeup references")
     knowledge_sub = knowledge_parser.add_subparsers(dest="knowledge_command", required=True)
     knowledge_import = knowledge_sub.add_parser("import", help="Import local Markdown or GitHub reference")
-    knowledge_import.add_argument("source"); knowledge_import.add_argument("--output", required=True)
+    knowledge_import.add_argument("source")
+    knowledge_import.add_argument("--output", required=True)
     scenario_parser = sub.add_parser("scenario", help="Generate and validate human-reviewed scenarios")
     scenario_sub = scenario_parser.add_subparsers(dest="scenario_command", required=True)
-    scenario_gen = scenario_sub.add_parser("generate"); scenario_gen.add_argument("--source", required=True); scenario_gen.add_argument("--output", required=True)
-    scenario_val = scenario_sub.add_parser("validate"); scenario_val.add_argument("pack")
+    scenario_gen = scenario_sub.add_parser("generate")
+    scenario_gen.add_argument("--source", required=True)
+    scenario_gen.add_argument("--output", required=True)
+    scenario_val = scenario_sub.add_parser("validate")
+    scenario_val.add_argument("pack")
     assessment_parser = sub.add_parser("assessment", help="Create/run/compare offline evidence assessments")
     assessment_sub = assessment_parser.add_subparsers(dest="assessment_command", required=True)
     assessment_create = assessment_sub.add_parser("create")
-    assessment_create.add_argument("--source", required=True); assessment_create.add_argument("--scope", required=True); assessment_create.add_argument("--target", required=True); assessment_create.add_argument("--output", required=True)
+    assessment_create.add_argument("--source", required=True)
+    assessment_create.add_argument("--scope", required=True)
+    assessment_create.add_argument("--target", required=True)
+    assessment_create.add_argument("--output", required=True)
     assessment_run = assessment_sub.add_parser("run")
-    assessment_run.add_argument("--assessment", required=True); assessment_run.add_argument("--evidence", required=True); assessment_run.add_argument("--output", required=True)
+    assessment_run.add_argument("--assessment", required=True)
+    assessment_run.add_argument("--evidence", required=True)
+    assessment_run.add_argument("--output", required=True)
     assessment_compare = assessment_sub.add_parser("compare")
-    assessment_compare.add_argument("--baseline", required=True); assessment_compare.add_argument("--current", required=True); assessment_compare.add_argument("--output", required=True)
+    assessment_compare.add_argument("--baseline", required=True)
+    assessment_compare.add_argument("--current", required=True)
+    assessment_compare.add_argument("--output", required=True)
 
     args = parser.parse_args()
     try:
         if args.command == "knowledge":
-            record=extract_knowledge(args.source,args.output)
-            print(f"Imported reference ({len(record['candidate_mappings'])} candidate mapping(s)); untrusted source preserved at {args.output}")
+            record = extract_knowledge(args.source, args.output)
+            mappings = len(record.get("candidate_mappings", []))
+            print(
+                f"Imported reference ({mappings} candidate mapping(s)); "
+                f"untrusted source preserved at {args.output}"
+            )
             return 0
         if args.command == "scenario":
             if args.scenario_command == "generate":
-                doc=generate_scenarios(args.source,args.output); print(f"Generated {len(doc['scenarios'])} draft scenario(s) at {args.output}; none approved for execution")
+                doc = generate_scenarios(args.source, args.output)
+                count = len(doc.get("scenarios", []))
+                print(
+                    f"Generated {count} draft scenario(s) at {args.output}; "
+                    "none approved for execution"
+                )
                 return 0
-            report=validate_scenarios(args.pack); print(json.dumps(report,indent=2)); return 0 if report['valid'] else 2
+            report = validate_scenarios(args.pack)
+            print(json.dumps(report, indent=2))
+            return 0 if report["valid"] else 2
         if args.command == "assessment":
             if args.assessment_command == "create":
-                doc=create_assessment(args.source,args.scope,args.target,args.output); print(f"Assessment created: {doc['assessment_id']} ({len(doc['approved_scenarios'])} approved scenario(s)); evidence-only execution")
+                doc = create_assessment(
+                    args.source, args.scope, args.target, args.output
+                )
+                approved = len(doc.get("approved_scenarios", []))
+                print(
+                    f"Assessment created: {doc['assessment_id']} "
+                    f"({approved} approved scenario(s)); evidence-only execution"
+                )
                 return 0
             if args.assessment_command == "run":
-                report=run_assessment(args.assessment,args.evidence,args.output); print(f"Assessment evidence report written: {args.output}; {report['summary']}")
+                report = run_assessment(
+                    args.assessment, args.evidence, args.output
+                )
+                summary = report.get("summary", {})
+                print(
+                    f"Assessment evidence report written: {args.output}; {summary}"
+                )
                 return 0
-            report=compare_assessments(args.baseline,args.current,args.output); print(f"Regression comparison written: {args.output}; {report['summary']}")
+            report = compare_assessments(
+                args.baseline, args.current, args.output
+            )
+            summary = report.get("summary", {})
+            print(
+                f"Regression comparison written: {args.output}; {summary}"
+            )
             return 0
         if args.command == "eval":
             if args.eval_command == "list":
                 print(json.dumps(list_evaluations(), indent=2))
                 return 0
-            evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8")) if args.evidence else {}
-            report = run_evaluations(evidence, args.scenario)
-            rendered = json.dumps(report, indent=2, ensure_ascii=False) + "\\n"
+            raw_evidence = (
+                json.loads(Path(args.evidence).read_text(encoding="utf-8"))
+                if args.evidence
+                else {}
+            )
+            report = run_evaluations(raw_evidence, args.scenario)
+            rendered = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
             if args.output:
                 output = Path(args.output)
                 output.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +183,10 @@ def main() -> int:
             if args.sarif:
                 sarif_path = Path(args.sarif)
                 sarif_path.parent.mkdir(parents=True, exist_ok=True)
-                sarif_path.write_text(json.dumps(to_sarif(report), indent=2) + "\\n", encoding="utf-8")
+                sarif_path.write_text(
+                    json.dumps(to_sarif(report), indent=2) + "\n",
+                    encoding="utf-8",
+                )
                 print(f"SARIF report written to {args.sarif}")
             print(f"Evaluation summary: {report['summary']}")
             print("Synthetic evidence only; no live model, tools, or target were contacted.")
@@ -148,12 +196,19 @@ def main() -> int:
             report = analyze_mcp_inventory(source)
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            output.write_text(
+                json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
             if args.sarif:
                 sarif_path = Path(args.sarif)
                 sarif_path.parent.mkdir(parents=True, exist_ok=True)
-                sarif_path.write_text(json.dumps(to_sarif(report), indent=2) + "\n", encoding="utf-8")
-            print(f"Analysis written to {output}: {report['summary']['total']} finding(s)")
+                sarif_path.write_text(
+                    json.dumps(to_sarif(report), indent=2) + "\n",
+                    encoding="utf-8",
+                )
+            total = report.get("summary", {}).get("total", 0)
+            print(f"Analysis written to {output}: {total} finding(s)")
             print("Static analysis only; no tools invoked or target contacted.")
             return 0
         if args.command == "compare":
@@ -162,7 +217,10 @@ def main() -> int:
             report = compare_reports(baseline, current)
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            output.write_text(
+                json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
             print(f"Comparison written to {output}: {report['summary']}")
             return 0
         if args.command == "lab":
@@ -170,7 +228,7 @@ def main() -> int:
                 print(json.dumps(list_scenarios(), indent=2))
                 return 0
             report = run_labs(args.scenario)
-            rendered = json.dumps(report, indent=2, ensure_ascii=False) + "\\n"
+            rendered = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
             if args.output:
                 out = Path(args.output)
                 out.parent.mkdir(parents=True, exist_ok=True)
@@ -181,10 +239,16 @@ def main() -> int:
             if args.sarif:
                 sarif_path = Path(args.sarif)
                 sarif_path.parent.mkdir(parents=True, exist_ok=True)
-                sarif_path.write_text(json.dumps(to_sarif(report), indent=2) + "\\n", encoding="utf-8")
+                sarif_path.write_text(
+                    json.dumps(to_sarif(report), indent=2) + "\n",
+                    encoding="utf-8",
+                )
                 print(f"SARIF report written to {args.sarif}")
-            print(f"Completed {report['summary']['scenarios_run']} local scenario(s); "
-                  f"{report['summary']['findings']} synthetic finding(s).")
+            summary = report.get("summary", {})
+            print(
+                f"Completed {summary.get('scenarios_run', 0)} local scenario(s); "
+                f"{summary.get('findings', 0)} synthetic finding(s)."
+            )
             print("No network access, external services, or real customer data were used.")
             return 0
         if args.command == "catalog":
@@ -197,23 +261,40 @@ def main() -> int:
                 require_target_in_scope(args.target, scope)
                 print(f"AUTHORIZED SCOPE MATCH: {args.target}")
             else:
-                print(f"Scope valid: {scope['engagement']} ({len(scope['targets'])} target(s)); expires {scope['valid_until']}")
+                print(
+                    f"Scope valid: {scope['engagement']} "
+                    f"({len(scope['targets'])} target(s)); expires {scope['valid_until']}"
+                )
             return 0
         if args.command == "mcp-http-inspect":
             scope = load_scope(args.scope)
             token = os.environ.get(args.auth_env) if args.auth_env else None
             if args.auth_env and token is None:
                 raise MCPHTTPError(f"Environment variable {args.auth_env!r} is not set")
-            report = inspect_http_server(args.url, scope, timeout=args.timeout,
-                                         bearer_token=token, origin=args.origin)
+            report = inspect_http_server(
+                args.url,
+                scope,
+                timeout=args.timeout,
+                bearer_token=token,
+                origin=args.origin,
+            )
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            output.write_text(
+                json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
             if args.sarif:
                 sarif_path = Path(args.sarif)
                 sarif_path.parent.mkdir(parents=True, exist_ok=True)
-                sarif_path.write_text(json.dumps(to_sarif(report), indent=2) + "\n", encoding="utf-8")
-            counts = {key: len(value["items"]) for key, value in report["inventory"].items()}
+                sarif_path.write_text(
+                    json.dumps(to_sarif(report), indent=2) + "\n",
+                    encoding="utf-8",
+                )
+            counts = {
+                key: len(value.get("items", []))
+                for key, value in report.get("inventory", {}).items()
+            }
             print(f"MCP HTTP inventory written to {output}")
             print("Discovered: " + ", ".join(f"{key}={value}" for key, value in counts.items()))
             print("No tools invoked, resources read, prompts retrieved, or identities impersonated.")
@@ -224,7 +305,10 @@ def main() -> int:
             command = parse_server_command(args.server_command)
             report = inspect_stdio_server(command, timeout=args.timeout)
             write_report(report, args.output)
-            counts = {key: len(value["items"]) for key, value in report["inventory"].items()}
+            counts = {
+                key: len(value.get("items", []))
+                for key, value in report.get("inventory", {}).items()
+            }
             print(f"MCP inventory written to {args.output}")
             print("Discovered: " + ", ".join(f"{key}={value}" for key, value in counts.items()))
             print("Passive mode: no tools invoked, resources read, or prompts retrieved.")
@@ -238,10 +322,11 @@ def main() -> int:
                 write_plan(plan, output)
             else:
                 output.write_text(render_plan_markdown(plan), encoding="utf-8")
-            print(f"Wrote {len(plan['techniques'])} manual test cases to {output}")
+            technique_count = len(plan.get("techniques", []))
+            print(f"Wrote {technique_count} manual test cases to {output}")
             print("No target was contacted; this command only generated a local plan.")
             return 0
-    except (ScopeError, MCPInspectionError, MCPHTTPError, OSError, ValueError) as exc:
+    except (MCPHTTPError, MCPInspectionError, OSError, ScopeError, ValueError) as exc:
         print(f"DENIED: {exc}", file=sys.stderr)
         return 2
     return 1
@@ -249,3 +334,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

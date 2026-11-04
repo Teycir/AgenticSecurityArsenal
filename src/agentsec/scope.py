@@ -10,6 +10,10 @@ class ScopeError(ValueError):
     """Raised when an authorization manifest is invalid or insufficient."""
 
 
+class MCPHTTPError(RuntimeError):
+    """Raised when a remote MCP endpoint is not authorized for inspection."""
+
+
 def _origin(value: str) -> tuple[str, str, int] | None:
     try:
         parsed = urlsplit(value)

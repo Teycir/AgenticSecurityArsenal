@@ -10,7 +10,12 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
+
+
+class _ExitMessage(Exception):
+    """Sentinel for clean stream shutdown."""
+
 
 MODERN_PROTOCOL_VERSION = "2026-07-28"
 LEGACY_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
@@ -39,7 +44,7 @@ class _StdoutReader:
                     self.messages.put(MCPInspectionError("MCP message exceeded 4 MiB limit"))
                     return
                 self.messages.put(line)
-        except BaseException as exc:
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
             self.messages.put(exc)
 
 
@@ -58,11 +63,15 @@ class MCPStdioClient:
         self.next_id = 1
         self.protocol_version: str | None = None
 
-    def __enter__(self) -> "MCPStdioClient":
+    def __enter__(self) -> Self:
         # No shell is used. The user explicitly supplies the executable and arguments.
         self.process = subprocess.Popen(
-            self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, shell=False, close_fds=True,
+            self.command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            shell=False,
+            close_fds=True,
             env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
         assert self.process.stdout is not None
@@ -97,7 +106,9 @@ class MCPStdioClient:
     def notify(self, method: str) -> None:
         self._send({"jsonrpc": "2.0", "method": method})
 
-    def request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def request(
+        self, method: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         request_id = self.next_id
         self.next_id += 1
         message: dict[str, Any] = {"jsonrpc": "2.0", "id": request_id, "method": method}
@@ -121,8 +132,7 @@ class MCPStdioClient:
             except queue.Empty as exc:
                 raise MCPInspectionError(f"Timed out waiting for MCP response to {method}") from exc
             if raw is None:
-                code = self.process.poll() if self.process else None
-                raise MCPInspectionError(f"MCP server closed stdout (exit code: {code})")
+                raise MCPInspectionError("MCP server closed stdout")
             if isinstance(raw, BaseException):
                 raise MCPInspectionError(str(raw))
             try:
@@ -141,7 +151,13 @@ class MCPStdioClient:
             # Reject server-initiated requests without executing them. This keeps
             # the passive client from becoming a sampling/elicitation proxy.
             if "method" in response and "id" in response:
-                self._send({"jsonrpc": "2.0", "id": response["id"], "error": {"code": -32601, "message": "Client method not supported by passive inspector"}})
+                self._send(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": response["id"],
+                        "error": {"code": -32601, "message": "Client method not supported by passive inspector"},
+                    }
+                )
 
 
 def _list_result(client: MCPStdioClient, method: str) -> dict[str, Any]:
@@ -172,89 +188,149 @@ def _list_result(client: MCPStdioClient, method: str) -> dict[str, Any]:
 
 def _summarize_findings(inventory: dict[str, Any]) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
-    for tool in inventory["tools"]["items"]:
+    tools = inventory.get("tools", {}).get("items", [])
+    for tool in tools:
         name = str(tool.get("name", "<unnamed>"))
         schema = tool.get("inputSchema")
         if not isinstance(schema, dict):
-            findings.append({"severity": "medium", "id": "MCP-INV-001", "title": f"Tool {name} has no inspectable input schema", "detail": "The tool definition omitted a valid inputSchema; clients may have difficulty validating arguments."})
+            findings.append(
+                {
+                    "severity": "medium",
+                    "id": "MCP-INV-001",
+                    "title": f"Tool {name} has no inspectable input schema",
+                    "detail": "The tool definition omitted a valid inputSchema; clients may have difficulty validating arguments.",
+                }
+            )
         elif schema.get("type") != "object":
-            findings.append({"severity": "low", "id": "MCP-INV-002", "title": f"Tool {name} uses a non-object input schema", "detail": "Review whether the schema matches the intended tool contract."})
+            findings.append(
+                {
+                    "severity": "low",
+                    "id": "MCP-INV-002",
+                    "title": f"Tool {name} uses a non-object input schema",
+                    "detail": "Review whether the schema matches the intended tool contract.",
+                }
+            )
         elif schema.get("additionalProperties") is True:
-            findings.append({"severity": "low", "id": "MCP-INV-003", "title": f"Tool {name} allows additional properties", "detail": "Consider rejecting undeclared arguments unless extensibility is intentional."})
+            findings.append(
+                {
+                    "severity": "low",
+                    "id": "MCP-INV-003",
+                    "title": f"Tool {name} allows additional properties",
+                    "detail": "Consider rejecting undeclared arguments unless extensibility is intentional.",
+                }
+            )
         if not tool.get("description"):
-            findings.append({"severity": "info", "id": "MCP-INV-004", "title": f"Tool {name} has no description", "detail": "Missing descriptions reduce transparency for clients and reviewers."})
+            findings.append(
+                {
+                    "severity": "info",
+                    "id": "MCP-INV-004",
+                    "title": f"Tool {name} has no description",
+                    "detail": "Missing descriptions reduce transparency for clients and reviewers.",
+                }
+            )
         annotations = tool.get("annotations", {})
         if isinstance(annotations, dict) and annotations.get("readOnlyHint") is not True:
-            findings.append({"severity": "info", "id": "MCP-INV-008", "title": f"Tool {name} is not declared read-only", "detail": "Review this tool for side effects and require explicit user approval where appropriate. MCP annotations are hints, not security guarantees."})
+            findings.append(
+                {
+                    "severity": "info",
+                    "id": "MCP-INV-008",
+                    "title": f"Tool {name} is not declared read-only",
+                    "detail": "Review this tool for side effects and require explicit user approval where appropriate. MCP annotations are hints, not security guarantees.",
+                }
+            )
     for key, title, detail in (
         ("resources", "Server exposes resources", "Resource metadata was inventoried; access controls and tenant isolation need separate testing."),
         ("resources/templates", "Server exposes resource templates", "Parameterized resource patterns need authorization review."),
         ("prompts", "Server exposes prompts", "Prompt metadata was inventoried; prompt contents were not retrieved."),
     ):
-        if inventory[key]["items"]:
-            findings.append({"severity": "info", "id": "MCP-INV-005", "title": title, "detail": detail})
+        if inventory.get(key, {}).get("items"):
+            findings.append(
+                {"severity": "info", "id": "MCP-INV-005", "title": title, "detail": detail}
+            )
     return findings
 
 
 def inspect_stdio_server(command: list[str], timeout: float = 10.0) -> dict[str, Any]:
     """Launch a local MCP stdio server and enumerate metadata only."""
     with MCPStdioClient(command, timeout=timeout) as client:
-        # Probe modern stateless MCP first. Legacy servers commonly answer
-        # -32601 or remain silent; both cases fall back to initialize.
         modern_result: dict[str, Any] | None = None
         try:
-            discovery = client.request("server/discover", {"_meta": {
-                META_PREFIX + "protocolVersion": MODERN_PROTOCOL_VERSION,
-                META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
-                META_PREFIX + "clientCapabilities": {},
-            }})
-            if "result" in discovery and isinstance(discovery["result"].get("supportedVersions"), list):
+            discovery = client.request(
+                "server/discover",
+                {"_meta": {
+                    META_PREFIX + "protocolVersion": MODERN_PROTOCOL_VERSION,
+                    META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
+                    META_PREFIX + "clientCapabilities": {},
+                }},
+            )
+            if "result" in discovery and isinstance(
+                discovery["result"].get("supportedVersions"), list
+            ):
                 modern_result = discovery["result"]
         except MCPInspectionError as exc:
             if "Timed out" not in str(exc):
                 raise
         if modern_result is not None and MODERN_PROTOCOL_VERSION in modern_result["supportedVersions"]:
             client.protocol_version = MODERN_PROTOCOL_VERSION
-            init_result = {
+            init_result: dict[str, Any] = {
                 "protocolVersion": MODERN_PROTOCOL_VERSION,
-                "serverInfo": modern_result.get("_meta", {}).get(META_PREFIX + "serverInfo", modern_result.get("serverInfo", {})),
+                "serverInfo": modern_result.get("_meta", {}).get(
+                    META_PREFIX + "serverInfo",
+                    modern_result.get("serverInfo", {}),
+                ),
                 "capabilities": modern_result.get("capabilities", {}),
                 "discovery": modern_result,
             }
             protocol_era = "modern-stateless"
         else:
-            supported = modern_result.get("supportedVersions", []) if modern_result else []
-            selected_legacy = next((version for version in LEGACY_PROTOCOL_VERSIONS if version in supported), None)
+            supported = (
+                modern_result.get("supportedVersions", [])
+                if modern_result
+                else []
+            )
+            selected_legacy = next(
+                (version for version in LEGACY_PROTOCOL_VERSIONS if version in supported),
+                None,
+            )
             requested_legacy = selected_legacy or LEGACY_PROTOCOL_VERSIONS[0]
-            init = client.request("initialize", {
-                "protocolVersion": requested_legacy,
-                "capabilities": {},
-                "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
-            })
+            init = client.request(
+                "initialize",
+                {
+                    "protocolVersion": requested_legacy,
+                    "capabilities": {},
+                    "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
+                },
+            )
             if "error" in init:
                 raise MCPInspectionError(f"MCP initialize failed: {init['error']}")
             init_result = init["result"]
             client.protocol_version = init_result.get("protocolVersion", requested_legacy)
             client.notify("notifications/initialized")
             protocol_era = "legacy-handshake"
-        inventory = {
+        inventory: dict[str, Any] = {
             "tools": _list_result(client, "tools/list"),
             "resources": _list_result(client, "resources/list"),
             "resources/templates": _list_result(client, "resources/templates/list"),
             "prompts": _list_result(client, "prompts/list"),
         }
     report: dict[str, Any] = {
-        "schema_version": "1.0", "inspector_version": "0.4.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(), "transport": "stdio",
-        "server_command": command[0], "protocol_version": init_result.get("protocolVersion"),
+        "schema_version": "1.0",
+        "inspector_version": "0.4.0",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "transport": "stdio",
+        "server_command": command[0],
+        "protocol_version": init_result.get("protocolVersion"),
         "protocol_era": protocol_era,
         "server_info": init_result.get("serverInfo", {}),
         "server_capabilities": init_result.get("capabilities", {}),
         "discovery": init_result.get("discovery"),
-        "inventory": inventory, "findings": [],
+        "inventory": inventory,
+        "findings": [],
         "execution_boundary": {
-            "tools_invoked": False, "resources_read": False,
-            "prompts_retrieved": False, "server_requests_executed": False,
+            "tools_invoked": False,
+            "resources_read": False,
+            "prompts_retrieved": False,
+            "server_requests_executed": False,
             "note": "Passive metadata inventory only. Listing metadata does not prove authorization enforcement or absence of vulnerabilities.",
         },
     }
@@ -276,3 +352,4 @@ def write_report(report: dict[str, Any], output: str | Path) -> None:
     path = Path(output)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+

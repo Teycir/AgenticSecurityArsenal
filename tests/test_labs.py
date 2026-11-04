@@ -1,6 +1,7 @@
 from agentsec.labs import list_scenarios, run_labs
 from agentsec.sarif import to_sarif
 
+
 def test_lab_catalog_has_five_scenarios():
     assert len(list_scenarios()) == 5
 

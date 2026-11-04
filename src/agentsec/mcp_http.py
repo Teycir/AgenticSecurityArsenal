@@ -2,15 +2,12 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlsplit
-
-from agentsec.scope import require_target_in_scope
 
 MODERN_VERSION = "2026-07-28"
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
@@ -39,6 +36,13 @@ def _validate_endpoint(url: str) -> None:
         _ = parsed.port
     except ValueError as exc:
         raise MCPHTTPError("Endpoint has an invalid port") from exc
+
+
+def require_target_in_scope(target: str, scope: dict[str, object]) -> None:
+    from agentsec.scope import target_is_allowed
+
+    if not target_is_allowed(target, scope):
+        raise MCPHTTPError(f"Target origin is not explicitly authorized: {target}")
 
 
 def _valid_origin(origin: str) -> bool:
