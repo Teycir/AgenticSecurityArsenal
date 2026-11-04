@@ -1,0 +1,650 @@
+[
+  {
+    "id": "AG-001",
+    "name": "Agent goal hijack",
+    "domain": "Agent behavior",
+    "class": "Direct prompt injection",
+    "description": "Untrusted user content attempts to override task intent or policy.",
+    "safe_validation": "Use a harmless canary instruction and verify whether the agent changes a non-sensitive response field.",
+    "mitigation": "Enforce instruction hierarchy outside the model; constrain actions with policy checks.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-002",
+    "name": "Indirect prompt injection",
+    "domain": "Agent behavior",
+    "class": "Indirect prompt injection",
+    "description": "Instructions embedded in retrieved documents, webpages, tickets or files influence agent behavior.",
+    "safe_validation": "Place a benign marker instruction in a controlled document and check whether it is treated as data or authority.",
+    "mitigation": "Isolate untrusted content, label provenance, constrain tool calls and require approval for side effects.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-003",
+    "name": "System prompt/context disclosure",
+    "domain": "Agent behavior",
+    "class": "Hidden context exposure",
+    "description": "The agent reveals hidden instructions, secrets or internal configuration through normal or error paths.",
+    "safe_validation": "Use synthetic canary strings; test for exact marker disclosure, not generic claims.",
+    "mitigation": "Keep secrets out of prompts; separate policy from context; filter outputs and errors.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-004",
+    "name": "Tool misuse",
+    "domain": "Tool layer",
+    "class": "Excessive agency",
+    "description": "A model can invoke a legitimate tool for an unintended or over-broad purpose.",
+    "safe_validation": "Test with mock tools and synthetic records; verify operation-level authorization.",
+    "mitigation": "Narrow tool schemas, server-side authorization, allowlisted operations and human approval.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-005",
+    "name": "Tool description poisoning",
+    "domain": "Tool layer",
+    "class": "Tool poisoning",
+    "description": "Malicious or misleading tool metadata changes model selection or argument construction.",
+    "safe_validation": "Review tool metadata provenance and compare behavior against trusted metadata in a lab.",
+    "mitigation": "Sign and pin tool definitions; review changes; treat descriptions as untrusted input.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-006",
+    "name": "Confused deputy",
+    "domain": "Identity / authorization",
+    "class": "Confused deputy",
+    "description": "A privileged agent uses its authority on behalf of a caller who lacks the corresponding permission.",
+    "safe_validation": "Use two synthetic principals with distinct permissions and test cross-principal access.",
+    "mitigation": "Bind authorization to caller, resource and action; avoid ambient authority.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-007",
+    "name": "MCP resource exposure",
+    "domain": "MCP",
+    "class": "Resource authorization failure",
+    "description": "Sensitive resources are discoverable or readable without object-level authorization.",
+    "safe_validation": "Inventory resources and test reads only against synthetic protected resources.",
+    "mitigation": "Authorize every resource read server-side; do not publish secrets in resource catalogs.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-008",
+    "name": "MCP tool authorization bypass",
+    "domain": "MCP",
+    "class": "Tool authorization failure",
+    "description": "A tool grants access or changes a protected state without independent authorization.",
+    "safe_validation": "Inspect tool list and schemas; invoke only harmless test tools in a dedicated lab.",
+    "mitigation": "Apply least privilege and per-call authorization; separate privilege-granting workflows.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-009",
+    "name": "MCP session confusion",
+    "domain": "MCP",
+    "class": "Session binding weakness",
+    "description": "Session identifiers, origin handling or transport state are not bound to the intended identity.",
+    "safe_validation": "Review session lifecycle, transport headers and cross-session isolation using test accounts.",
+    "mitigation": "Bind sessions to authenticated principals; rotate, expire and protect session identifiers.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-010",
+    "name": "MCP transport and origin controls",
+    "domain": "MCP",
+    "class": "Transport trust failure",
+    "description": "CORS/Origin assumptions are incorrectly used as authentication or authorization.",
+    "safe_validation": "Configuration review plus benign requests from controlled clients.",
+    "mitigation": "Use protocol-level authentication and authorization; treat Origin as a browser control only.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-011",
+    "name": "MCP schema abuse",
+    "domain": "MCP",
+    "class": "Input validation failure",
+    "description": "Tool arguments exploit weak types, missing bounds or ambiguous schemas.",
+    "safe_validation": "Fuzz schemas with boundary values and invalid types against mock or lab tools.",
+    "mitigation": "Strict schema validation, bounds, canonicalization and safe error handling.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-012",
+    "name": "SSRF through tools",
+    "domain": "Backend / network",
+    "class": "Server-side request forgery",
+    "description": "A URL-fetching or network tool can reach unintended internal destinations.",
+    "safe_validation": "Use a controlled callback endpoint and synthetic internal canaries; do not probe cloud metadata or third-party networks.",
+    "mitigation": "Egress allowlists, DNS/IP validation, redirect controls and network segmentation.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-013",
+    "name": "Command injection through tools",
+    "domain": "Backend / execution",
+    "class": "OS command injection",
+    "description": "Untrusted tool arguments are concatenated into shell commands.",
+    "safe_validation": "Use a local fixture that records argument boundaries; do not execute shell metacharacter payloads against live systems.",
+    "mitigation": "Avoid shell invocation; use argument arrays, strict validation and sandboxing.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-014",
+    "name": "Code injection / unsafe evaluation",
+    "domain": "Backend / execution",
+    "class": "Dynamic evaluation",
+    "description": "A tool evaluates attacker-controlled expressions as code.",
+    "safe_validation": "Static review for eval/exec and test against a non-executing parser fixture.",
+    "mitigation": "Use a constrained parser or domain-specific interpreter; never evaluate untrusted code.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-015",
+    "name": "Unsafe deserialization",
+    "domain": "Backend / parsing",
+    "class": "Insecure deserialization",
+    "description": "Untrusted YAML, pickle or object formats trigger unsafe object construction.",
+    "safe_validation": "Identify loaders and verify safe-loader configuration using benign serialized data.",
+    "mitigation": "Use safe parsers, explicit schemas and content-type allowlists.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-016",
+    "name": "Path traversal / file disclosure",
+    "domain": "Backend / filesystem",
+    "class": "Path traversal",
+    "description": "File tools resolve attacker-controlled paths outside intended directories.",
+    "safe_validation": "Use synthetic files in a temporary directory and test canonical path containment.",
+    "mitigation": "Resolve paths, enforce root containment and use capability-based file access.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-017",
+    "name": "Error-based information disclosure",
+    "domain": "Backend / errors",
+    "class": "Verbose error leakage",
+    "description": "Exceptions disclose secrets, paths, tokens or internal state.",
+    "safe_validation": "Trigger expected validation errors with synthetic values and inspect redaction.",
+    "mitigation": "Return generic client errors; keep structured diagnostics in protected logs.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-018",
+    "name": "Credential and token exposure",
+    "domain": "Identity",
+    "class": "Secret disclosure",
+    "description": "Tokens appear in prompts, logs, tool outputs, environment dumps or traces.",
+    "safe_validation": "Use synthetic credentials and secret scanners on controlled artifacts.",
+    "mitigation": "Use secret managers, scoped short-lived credentials and output/log redaction.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-019",
+    "name": "OAuth scope and delegation abuse",
+    "domain": "Identity",
+    "class": "Excessive delegated authority",
+    "description": "Agent tokens or delegated scopes exceed task requirements or survive too long.",
+    "safe_validation": "Review consent, token audience, scopes, expiry and delegation chains with test identities.",
+    "mitigation": "Use least-privilege scopes, audience binding, short TTL and revocation.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-020",
+    "name": "RAG poisoning",
+    "domain": "Knowledge / retrieval",
+    "class": "Retrieval poisoning",
+    "description": "Untrusted documents manipulate retrieval results or downstream agent decisions.",
+    "safe_validation": "Seed a private test index with labeled benign adversarial documents and inspect provenance.",
+    "mitigation": "Curate ingestion, track provenance, isolate trust levels and validate retrieved claims.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-021",
+    "name": "Memory poisoning",
+    "domain": "Knowledge / memory",
+    "class": "Persistent context manipulation",
+    "description": "A conversation or tool writes misleading instructions into persistent memory.",
+    "safe_validation": "Use a disposable memory namespace and verify persistence, attribution and deletion.",
+    "mitigation": "Require provenance, write authorization, expiry and user-visible memory controls.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-022",
+    "name": "Context-window manipulation",
+    "domain": "Knowledge / retrieval",
+    "class": "Context flooding",
+    "description": "Large or strategically placed content displaces relevant policy or evidence.",
+    "safe_validation": "Use bounded synthetic documents and measure truncation and policy retention.",
+    "mitigation": "Prioritize trusted instructions, bound inputs and preserve policy out-of-band.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-023",
+    "name": "IDOR via agent tools",
+    "domain": "Backend / authorization",
+    "class": "Insecure direct object reference",
+    "description": "The agent accepts an object identifier without verifying caller ownership.",
+    "safe_validation": "Use two synthetic users and synthetic objects; test cross-tenant access boundaries.",
+    "mitigation": "Object-level authorization on every operation; derive identity server-side.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-024",
+    "name": "Cache poisoning",
+    "domain": "Backend / state",
+    "class": "Untrusted cache state",
+    "description": "Attacker-controlled content influences authorization, tool results or trust decisions through a cache.",
+    "safe_validation": "Use an isolated cache namespace with synthetic keys and inspect key construction and integrity.",
+    "mitigation": "Authenticate cache writes, namespace by principal and purpose, sign or validate state.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-025",
+    "name": "TOCTOU / race conditions",
+    "domain": "Backend / concurrency",
+    "class": "Time-of-check to time-of-use",
+    "description": "Separate validation and execution permit concurrent actions to violate invariants.",
+    "safe_validation": "Use deterministic concurrency tests against a local transactional fixture.",
+    "mitigation": "Atomic transactions, locks, idempotency keys and database-enforced invariants.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-026",
+    "name": "A2A identity spoofing",
+    "domain": "Multi-agent",
+    "class": "Insecure inter-agent communication",
+    "description": "Messages are accepted without strong sender identity or integrity validation.",
+    "safe_validation": "Use mock agents and signed test identities; validate sender/audience binding.",
+    "mitigation": "Mutual authentication, signed messages, audience checks and replay protection.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-027",
+    "name": "A2A replay and delegation confusion",
+    "domain": "Multi-agent",
+    "class": "Replay / delegation abuse",
+    "description": "Valid messages or delegated authority are reused outside their intended context.",
+    "safe_validation": "Replay synthetic signed messages in a local harness and verify nonce/expiry handling.",
+    "mitigation": "Nonces, timestamps, request binding, scoped delegation and revocation.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-028",
+    "name": "Agent supply-chain compromise",
+    "domain": "Supply chain",
+    "class": "Untrusted component loading",
+    "description": "Skills, plugins, MCP servers, prompts or models are loaded without integrity/provenance checks.",
+    "safe_validation": "Inventory dependencies and verify pinned versions, hashes and publisher identity.",
+    "mitigation": "Pin dependencies, verify signatures, review updates and isolate execution.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-029",
+    "name": "Sandbox boundary weakness",
+    "domain": "Runtime isolation",
+    "class": "Insufficient isolation",
+    "description": "Agent tools inherit filesystem, network or process privileges beyond their task.",
+    "safe_validation": "Review container profiles and test only harmless boundary markers in a disposable lab.",
+    "mitigation": "Least privilege, read-only mounts, syscall restrictions and network isolation.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-030",
+    "name": "Denial of service / resource exhaustion",
+    "domain": "Availability",
+    "class": "Unbounded agent workload",
+    "description": "Recursive tool loops, huge outputs or expensive retrieval exhaust resources.",
+    "safe_validation": "Use low-rate bounded tests with explicit ceilings and monitoring.",
+    "mitigation": "Budgets, timeouts, concurrency caps, output limits and circuit breakers.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-031",
+    "name": "Human approval bypass",
+    "domain": "Human-agent workflow",
+    "class": "Approval workflow weakness",
+    "description": "High-impact actions proceed without meaningful informed approval.",
+    "safe_validation": "Test mock approval workflows and verify action, target and parameters are bound to approval.",
+    "mitigation": "Bind approval to exact operation parameters; expire approvals and audit decisions.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-032",
+    "name": "Audit and trace tampering",
+    "domain": "Observability",
+    "class": "Insufficient audit integrity",
+    "description": "Tool actions or agent decisions cannot be reliably reconstructed or logs can be altered.",
+    "safe_validation": "Compare event IDs across model, orchestrator, MCP and backend logs in a test environment.",
+    "mitigation": "Append-only logs, correlation IDs, integrity protection and independent telemetry.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-033",
+    "name": "Model/API data leakage",
+    "domain": "Model interface",
+    "class": "Sensitive data disclosure",
+    "description": "Prompts or responses reveal training, tenant or application data beyond authorization.",
+    "safe_validation": "Use synthetic canaries and tenant-isolation test fixtures.",
+    "mitigation": "Tenant isolation, data minimization, output controls and provider-side privacy review.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-034",
+    "name": "Model extraction / inference abuse",
+    "domain": "Model interface",
+    "class": "Model confidentiality",
+    "description": "Repeated queries infer private model behavior or sensitive training examples.",
+    "safe_validation": "Use rate-limited synthetic benchmark queries; avoid targeting third-party models.",
+    "mitigation": "Rate limits, monitoring, access controls and privacy-preserving training practices.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-035",
+    "name": "Multimodal instruction injection",
+    "domain": "Multimodal input",
+    "class": "Cross-modal prompt injection",
+    "description": "Instructions hidden in images, audio, video or document structure influence agent behavior.",
+    "safe_validation": "Use benign visible/hidden marker samples created for the test; inspect OCR/transcription provenance.",
+    "mitigation": "Treat extracted content as untrusted; separate perception from authority and gate actions.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  },
+  {
+    "id": "AG-036",
+    "name": "Agent loop / cascading failure",
+    "domain": "Orchestration",
+    "class": "Unbounded autonomy",
+    "description": "Retries, delegation or agent-to-agent loops amplify a single failure.",
+    "safe_validation": "Use mock agents with strict call ceilings and trace the workflow graph.",
+    "mitigation": "Global budgets, loop detection, idempotency and fail-safe termination.",
+    "risk_tags": [],
+    "framework_mappings": [],
+    "evidence_required": [
+      "scope_reference",
+      "test_setup",
+      "observed_result",
+      "impact_analysis"
+    ],
+    "status": "knowledge-base-entry"
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "engagement": "Local agent security lab",
+  "authorized_by": "Replace with approving owner and written authorization reference",
+  "valid_until": "2027-01-31T23:59:59Z",
+  "targets": [
+    {
+      "origin": "http://127.0.0.1:8000",
+      "description": "Local intentionally vulnerable lab"
+    },
+    {
+      "origin": "http://localhost:8000",
+      "description": "Local lab alias"
+    }
+  ],
+  "accounts": [
+    "synthetic-user",
+    "synthetic-admin"
+  ],
+  "excluded": [
+    "production",
+    "third-party MCP servers",
+    "real customer records"
+  ],
+  "rate_limit_per_minute": 30,
+  "allowed_test_classes": [
+    "passive",
+    "configuration",
+    "benign-canary"
+  ],
+  "stop_conditions": [
+    "unexpected access to real data",
+    "service instability",
+    "scope ambiguity"
+  ]
+}
