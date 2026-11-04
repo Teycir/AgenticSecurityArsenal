@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 — 2026-11-04
+
+- Added explicit `scenario approve` and `scenario revoke` CLI commands; approval requires exact scenario IDs and is never inferred from generation.
+- Strengthened scenario-pack validation for malformed rows, duplicate IDs, invalid status values, and mismatched approval flags.
+- Assessment creation now snapshots the full approved scenario definitions and fingerprints the source scenario pack and scope manifest.
+- Added canonical SHA-256 integrity verification; evidence runs refuse modified or malformed assessment manifests.
+- Improved assessment regression classification for improved, regressed, degraded, changed, new, removed, and unchanged scenarios; malformed/duplicate result IDs are rejected.
+- Fixed Python 3.10 compatibility by replacing the Python 3.11-only `typing.Self` import.
+- Added adversarial tests for tampering, missing integrity metadata, invalid approvals, duplicate IDs, regression transitions, and CLI approval/revocation.
+- Test suite: 51 passed on Python 3.13.5. Python 3.10 runtime and Ruff could not be run in the build environment; Python 3.10 import compatibility is addressed in source and remains to be confirmed in CI.
+
+### Integrity boundary
+
+The SHA-256 digest detects changes to the assessment payload when the digest is not also replaced. It is not a digital signature, does not prove who created or approved the assessment, and does not replace the original written authorization.
+
+
 ## 1.0.0 — 2026-11-04
 
 - Added provenance-preserving knowledge import for local Markdown and GitHub README references.

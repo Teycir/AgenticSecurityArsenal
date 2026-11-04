@@ -74,3 +74,14 @@ Next: richer JSON Schema analysis, explicit tool-risk classification, protocol c
 - Added tests proving offline, synthetic-only execution.
 - Lab results validate modeled fixtures, not live-target detection.
 \n- [x] v0.7.0 deterministic agent evaluation suite with evidence-based checks and JSON/SARIF output\n- [ ] v0.8.0 authorized adapter-based evaluation and CI regression gates\n
+
+## v1.2 — Scenario governance and reproducible evidence
+
+- [x] Explicit per-scenario approval and revocation through the CLI
+- [x] Strict scenario-pack approval-state validation
+- [x] Approved scenario snapshots embedded in assessment manifests
+- [x] Source-pack and scope fingerprints
+- [x] Canonical assessment integrity verification before evidence runs
+- [x] Regression classifications for improved, regressed, degraded, changed, new, removed, unchanged
+- [x] Adversarial tests for approval, tampering and malformed regression inputs
+- [x] Python 3.10-compatible MCP inspector typing

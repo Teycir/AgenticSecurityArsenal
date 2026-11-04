@@ -10,7 +10,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 
 class _ExitMessage(Exception):
@@ -63,7 +63,7 @@ class MCPStdioClient:
         self.next_id = 1
         self.protocol_version: str | None = None
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> MCPStdioClient:
         # No shell is used. The user explicitly supplies the executable and arguments.
         self.process = subprocess.Popen(
             self.command,
@@ -117,7 +117,7 @@ class MCPStdioClient:
         if self.protocol_version == MODERN_PROTOCOL_VERSION:
             message.setdefault("params", {})["_meta"] = {
                 META_PREFIX + "protocolVersion": self.protocol_version,
-                META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
+                META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "1.2.0"},
                 META_PREFIX + "clientCapabilities": {},
             }
         self._send(message)
@@ -259,7 +259,7 @@ def inspect_stdio_server(command: list[str], timeout: float = 10.0) -> dict[str,
                 "server/discover",
                 {"_meta": {
                     META_PREFIX + "protocolVersion": MODERN_PROTOCOL_VERSION,
-                    META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
+                    META_PREFIX + "clientInfo": {"name": "agentic-security-arsenal", "version": "1.2.0"},
                     META_PREFIX + "clientCapabilities": {},
                 }},
             )
@@ -298,7 +298,7 @@ def inspect_stdio_server(command: list[str], timeout: float = 10.0) -> dict[str,
                 {
                     "protocolVersion": requested_legacy,
                     "capabilities": {},
-                    "clientInfo": {"name": "agentic-security-arsenal", "version": "0.7.0"},
+                    "clientInfo": {"name": "agentic-security-arsenal", "version": "1.2.0"},
                 },
             )
             if "error" in init:

@@ -24,7 +24,7 @@ _Scan the QR code or copy the wallet address above._
 
 A modular security assessment knowledge base and safe testing scaffold for **LLM applications, AI agents, MCP servers, tool integrations, RAG systems, and A2A workflows**.
 
-> **Status:** v1.0.0 — integrated knowledge ingestion, draft scenario generation/validation, explicit scope-bound assessment manifests, deterministic evidence evaluation, regression comparison, passive MCP inventory, and reports. Live agent execution is not included; assessment runs are evidence-fixture-only. High-impact exploit reproduction belongs in isolated, intentionally vulnerable labs.
+> **Status:** v1.2.0 — integrated knowledge ingestion, draft scenario generation/validation with explicit CLI approval, integrity-checked scope-bound assessment snapshots, deterministic evidence evaluation, regression comparison, passive MCP inventory, and reports. Live agent execution is not included; assessment runs are evidence-fixture-only. High-impact exploit reproduction belongs in isolated, intentionally vulnerable labs.
 
 ## What it covers
 
@@ -161,6 +161,9 @@ agentsec knowledge import ./arkx-writeup.md --output knowledge.json
 # Generate draft scenarios; drafts are never executable by default
 agentsec scenario generate --source knowledge.json --output scenarios.json
 agentsec scenario validate scenarios.json
+# Approve only scenarios that have been reviewed; repeat --id as needed
+agentsec scenario approve scenarios.json --id prompt-injection
+agentsec scenario revoke scenarios.json --id prompt-injection
 
 # Create an assessment bound to an unexpired exact-origin authorization manifest
 agentsec assessment create --source scenarios.json --scope scope.json --target https://localhost:8443 --output assessment.json
@@ -170,4 +173,13 @@ agentsec assessment run --assessment assessment.json --evidence evidence.json --
 agentsec assessment compare --baseline before.json --current results.json --output regression.json
 ```
 
-Imported references are marked `UNTRUSTED_REFERENCE_ONLY`; taxonomy matches are heuristic candidates. Generated scenarios require explicit human approval (`status: approved` and `human_approval: true`) before they are included in an assessment. The current v1.0 runner consumes evidence fixtures and does **not** contact a target or execute agent/tool actions.
+Imported references are marked `UNTRUSTED_REFERENCE_ONLY`; taxonomy matches are heuristic candidates. Generated scenarios require explicit human approval (`status: approved` and `human_approval: true`) before they are included in an assessment. Use `agentsec scenario approve PACK --id SCENARIO_ID` to approve reviewed entries and `agentsec scenario revoke PACK --id SCENARIO_ID` to return them to draft. Assessment manifests embed the approved scenario definitions, source-pack and scope fingerprints, and a SHA-256 integrity digest; evidence runs reject modified manifests. This digest detects accidental or unsophisticated tampering, but is not a digital signature and does not authenticate the author. The runner consumes evidence fixtures and does **not** contact a target or execute agent/tool actions. Approved scenarios without a built-in evaluator are included as inconclusive, not silently dropped.
+
+
+## v1.2 scenario governance and assessment integrity
+
+- Scenario approval and revocation are explicit CLI operations; draft generation never implies approval.
+- Assessment manifests snapshot approved scenario definitions rather than depending on a mutable source file at run time.
+- SHA-256 fingerprints record the source scenario pack and scope manifest; a canonical manifest digest is verified before evidence evaluation.
+- Regression comparison distinguishes improved, regressed, degraded, changed, new, removed and unchanged scenarios.
+- Python 3.10 compatibility is retained by avoiding `typing.Self` (introduced in Python 3.11).

@@ -21,7 +21,7 @@ from agentsec.mcp_inspector import (
 )
 from agentsec.planning import build_plan, render_plan_markdown, write_plan
 from agentsec.sarif import to_sarif
-from agentsec.scenarios import generate_scenarios, validate_scenarios
+from agentsec.scenarios import generate_scenarios, set_scenario_approval, validate_scenarios
 from agentsec.scope import ScopeError, load_scope, require_target_in_scope
 
 
@@ -96,6 +96,12 @@ def main() -> int:
     scenario_gen.add_argument("--output", required=True)
     scenario_val = scenario_sub.add_parser("validate")
     scenario_val.add_argument("pack")
+    scenario_approve = scenario_sub.add_parser("approve", help="Explicitly approve reviewed scenarios")
+    scenario_approve.add_argument("pack")
+    scenario_approve.add_argument("--id", action="append", required=True, help="Scenario ID to approve; repeatable")
+    scenario_revoke = scenario_sub.add_parser("revoke", help="Revoke approval and return scenarios to draft")
+    scenario_revoke.add_argument("pack")
+    scenario_revoke.add_argument("--id", action="append", required=True, help="Scenario ID to revoke; repeatable")
     assessment_parser = sub.add_parser("assessment", help="Create/run/compare offline evidence assessments")
     assessment_sub = assessment_parser.add_subparsers(dest="assessment_command", required=True)
     assessment_create = assessment_sub.add_parser("create")
@@ -129,6 +135,17 @@ def main() -> int:
                 print(
                     f"Generated {count} draft scenario(s) at {args.output}; "
                     "none approved for execution"
+                )
+                return 0
+            if args.scenario_command in {"approve", "revoke"}:
+                approved = args.scenario_command == "approve"
+                set_scenario_approval(args.pack, args.id, approved=approved)
+                report = validate_scenarios(args.pack)
+                if not report["valid"]:
+                    raise ValueError("Updated scenario pack is invalid: " + "; ".join(report["errors"]))
+                print(
+                    f"{'Approved' if approved else 'Revoked'} {len(args.id)} scenario(s); "
+                    f"{report['executable_approved_count']} approved total."
                 )
                 return 0
             report = validate_scenarios(args.pack)

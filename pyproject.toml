@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentic-security-arsenal"
-version = "1.0.0"
-description = "Agent security assessment platform with knowledge ingestion, scenario workflows, scope controls and evidence evaluation"
+version = "1.2.0"
+description = "Agent security assessment platform with approval-gated scenarios, integrity-checked assessment snapshots, scope controls and evidence evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -31,3 +31,10 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+extend-ignore = [
+    "PYI034",  # __enter__ uses string annotation for Python 3.10 compatibility (Self is 3.11+)
+    "TRY004",  # ValueError is intentional: tests assert ValueError for invalid input
+    "SIM114",  # combined-if branches would obscure the ordered regression classification logic
+]
