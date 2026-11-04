@@ -1,0 +1,26 @@
+{
+  "name": "investigation-workflow",
+  "description": "Maintain an evidence-led investigation session and select the next review action without auto-executing it.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "scope-required-at-session-creation",
+  "inputs": [
+    "scope manifest",
+    "target",
+    "normalized evidence reports",
+    "optional session JSON"
+  ],
+  "outputs": [
+    "session JSON",
+    "queued manual review steps",
+    "decision log and report"
+  ],
+  "interfaces": "agentsec investigation create/next/record/report; MCP investigation_*",
+  "parallel_safety": "analysis of independent evidence is parallel-safe; writes to one session are sequential and must be serialized.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

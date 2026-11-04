@@ -85,3 +85,24 @@ Next: richer JSON Schema analysis, explicit tool-risk classification, protocol c
 - [x] Regression classifications for improved, regressed, degraded, changed, new, removed, unchanged
 - [x] Adversarial tests for approval, tampering and malformed regression inputs
 - [x] Python 3.10-compatible MCP inspector typing
+
+
+## v1.3.0 — Agent-first foundation
+
+- [x] Stable capability registry and structured tool contracts
+- [x] MCP stdio server (`initialize`, `tools/list`, `tools/call`, `ping`)
+- [x] Python API for capability composition
+- [x] Catalog search, scope authorization check, local synthetic labs, offline MCP inventory analysis
+- [x] Machine-readable capability manifest and explicit execution constraints
+- [ ] Adapter framework for external tools with per-adapter permission declarations
+- [ ] HTTP request/response evidence capture and replay
+- [ ] Scope-gated web/API passive discovery and bounded validation
+- [ ] Attack-path graph and hypothesis/evidence tracking
+- [ ] CTF benchmark harness with challenge fixtures, reproducibility and scoring
+- [ ] Android/static-analysis adapters (JADX, apktool, Ghidra integration points)
+
+## v1.3 design rule
+
+Capabilities are composable and agent-discoverable. External tools are adapters,
+not the product itself. Every active adapter must declare side effects, network
+behavior, authorization requirements, limits, output schema and evidence format.

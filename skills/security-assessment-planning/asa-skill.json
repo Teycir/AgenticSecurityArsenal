@@ -1,0 +1,23 @@
+{
+  "name": "security-assessment-planning",
+  "description": "Build a human-reviewable assessment plan from an authorized scope and selected security domains.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "none",
+  "inputs": [
+    "validated authorization manifest",
+    "optional technique domains"
+  ],
+  "outputs": [
+    "ordered manual test plan",
+    "technique references and limitations"
+  ],
+  "interfaces": "agentsec plan; MCP assessment_plan",
+  "parallel_safety": "yes, when each worker receives the same immutable scope and distinct technique domains.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

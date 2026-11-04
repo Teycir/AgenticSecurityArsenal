@@ -1,0 +1,25 @@
+# Agentic Security Arsenal
+
+> A modular security capability toolkit for AI agents and human security practitioners. It is not an autonomous pentester.
+
+## Start here
+- [README](README.md): product overview and CLI quick start
+- [Agent quick start](docs/QUICKSTART_AGENTS.md): skill discovery and integration
+- [Skills catalogue](docs/SKILLS.md): all skills and parallel-use guidance
+- [Human user guide](docs/USER_GUIDE.md): installation and usage
+- [Architecture](docs/ARCHITECTURE_V1_6.md): design and source of truth
+- [Evidence contract](docs/RESULT_CONTRACT.md): structured handoff format
+- [Authorization](AUTHORIZATION.md): scope and permission rules
+- [Security policy](SECURITY.md): responsible disclosure
+
+## Skills
+- [Portable skill folders](skills/README.md)
+- [Scope authorization](skills/scope-authorization/SKILL.md)
+- [MCP server review](skills/mcp-server-review/SKILL.md)
+- [OpenAPI review](skills/openapi-review/SKILL.md)
+- [Scanner triage](skills/scanner-results-triage/SKILL.md)
+
+## Interfaces
+- CLI: `agentsec`
+- MCP stdio server: `agentsec mcp-serve`
+- Python API: `agentsec.agent_api`

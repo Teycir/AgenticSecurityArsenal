@@ -10,6 +10,8 @@ from agentsec.assessment import compare_assessments, create_assessment, run_asse
 from agentsec.catalog import filter_catalog, load_catalog, render_catalog
 from agentsec.evaluations import list_evaluations, run_evaluations
 from agentsec.findings import analyze_mcp_inventory, compare_reports
+from agentsec.investigation import analyze_openapi, generate_hypotheses, ingest_burp_xml, ingest_nmap_xml, ingest_nuclei_jsonl, scoped_http_probe
+from agentsec.investigation_engine import create_investigation, next_action, record_result, investigation_report
 from agentsec.knowledge import extract_knowledge
 from agentsec.labs import list_scenarios, run_labs
 from agentsec.mcp_http import MCPHTTPError, inspect_http_server
@@ -23,6 +25,12 @@ from agentsec.planning import build_plan, render_plan_markdown, write_plan
 from agentsec.sarif import to_sarif
 from agentsec.scenarios import generate_scenarios, set_scenario_approval, validate_scenarios
 from agentsec.scope import ScopeError, load_scope, require_target_in_scope
+
+
+def _write_json_output(report: dict, destination: str) -> None:
+    output = Path(destination)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
 
 
 def main() -> int:
@@ -118,8 +126,122 @@ def main() -> int:
     assessment_compare.add_argument("--current", required=True)
     assessment_compare.add_argument("--output", required=True)
 
+    skills_parser = sub.add_parser("skills", help="Discover, inspect, and validate the bundled Agent Skills")
+    skills_sub = skills_parser.add_subparsers(dest="skills_command", required=True)
+    skills_sub.add_parser("list", help="List skills and their safety/parallel metadata")
+    skill_show = skills_sub.add_parser("show", help="Print one complete SKILL.md and its metadata")
+    skill_show.add_argument("name")
+    skills_sub.add_parser("validate", help="Validate skill metadata and Agent Skills frontmatter")
+
+    agent_parser = sub.add_parser("mcp-serve", help="Expose safe agent capabilities over MCP stdio")
+    agent_parser.add_argument("--print-manifest", action="store_true", help="Print the agent capability manifest and exit")
+
+    api_probe = sub.add_parser("http-probe", help="Make one bounded, scope-authorized HTTP GET request; redirects refused")
+    api_probe.add_argument("--url", required=True)
+    api_probe.add_argument("--scope", required=True)
+    api_probe.add_argument("--timeout", type=float, default=8.0)
+    api_probe.add_argument("--output", required=True)
+
+    openapi_parser = sub.add_parser("openapi", help="Statically analyze an OpenAPI JSON document")
+    openapi_parser.add_argument("document")
+    openapi_parser.add_argument("--output", required=True)
+
+    import_parser = sub.add_parser("import-scan", help="Import Nmap XML, Nuclei JSONL or Burp XML offline")
+    import_parser.add_argument("--format", choices=("nmap_xml", "nuclei_jsonl", "burp_xml"), required=True)
+    import_parser.add_argument("source")
+    import_parser.add_argument("--output", required=True)
+
+    hypothesis_parser = sub.add_parser("hypotheses", help="Generate unverified hypotheses from normalized report JSON files")
+    hypothesis_parser.add_argument("reports", nargs="+")
+    hypothesis_parser.add_argument("--output", required=True)
+
+    inv_parser = sub.add_parser("investigation", help="Create and manage stateful evidence-led investigations")
+    inv_sub = inv_parser.add_subparsers(dest="investigation_command", required=True)
+    inv_create = inv_sub.add_parser("create", help="Create a scope-checked session from normalized report JSON")
+    inv_create.add_argument("--scope", required=True)
+    inv_create.add_argument("--target", required=True)
+    inv_create.add_argument("--title", default="Security investigation")
+    inv_create.add_argument("reports", nargs="+")
+    inv_create.add_argument("--output", required=True)
+    inv_next = inv_sub.add_parser("next", help="Get the next queued investigation action")
+    inv_next.add_argument("session")
+    inv_next.add_argument("--output", required=True)
+    inv_record = inv_sub.add_parser("record", help="Record a human/agent supplied step outcome")
+    inv_record.add_argument("session")
+    inv_record.add_argument("--step-id", required=True)
+    inv_record.add_argument("--outcome", choices=("observed", "not_observed", "inconclusive"), required=True)
+    inv_record.add_argument("--note", required=True)
+    inv_record.add_argument("--evidence-json", help="Optional JSON evidence value")
+    inv_record.add_argument("--output", required=True)
+    inv_report = inv_sub.add_parser("report", help="Render an investigation summary")
+    inv_report.add_argument("session")
+    inv_report.add_argument("--output", required=True)
+
     args = parser.parse_args()
     try:
+        if args.command == "skills":
+            from agentsec.skills import get_skill, list_skills, validate_skills
+            if args.skills_command == "list":
+                print(json.dumps(list_skills(), indent=2, ensure_ascii=False))
+                return 0
+            if args.skills_command == "show":
+                skill = get_skill(args.name)
+                print(json.dumps(skill["metadata"], indent=2, ensure_ascii=False))
+                print("\n--- SKILL.md ---\n")
+                print(skill["instructions"])
+                return 0
+            report = validate_skills()
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+            return 0 if report["valid"] else 2
+        if args.command == "http-probe":
+            scope = load_scope(args.scope)
+            report = scoped_http_probe(args.url, scope, timeout=args.timeout)
+            _write_json_output(report, args.output)
+            print(f"HTTP probe report written to {args.output}; status={report.get('http_status')}")
+            return 0
+        if args.command == "openapi":
+            report = analyze_openapi(json.loads(Path(args.document).read_text(encoding="utf-8")))
+            _write_json_output(report, args.output)
+            print(f"OpenAPI analysis written to {args.output}; endpoints={report['endpoint_count']}")
+            return 0
+        if args.command == "import-scan":
+            fn = {"nmap_xml": ingest_nmap_xml, "nuclei_jsonl": ingest_nuclei_jsonl, "burp_xml": ingest_burp_xml}[args.format]
+            report = fn(args.source)
+            _write_json_output(report, args.output)
+            print(f"Imported {report.get('count', report.get('host_count', 0))} record(s) to {args.output}")
+            return 0
+        if args.command == "hypotheses":
+            reports = [json.loads(Path(name).read_text(encoding="utf-8")) for name in args.reports]
+            report = generate_hypotheses(*reports)
+            _write_json_output(report, args.output)
+            print(f"Generated {report['hypothesis_count']} unverified hypothesis(es) to {args.output}")
+            return 0
+        if args.command == "investigation":
+            if args.investigation_command == "create":
+                scope = load_scope(args.scope)
+                reports = [json.loads(Path(name).read_text(encoding="utf-8")) for name in args.reports]
+                report = create_investigation(scope, args.target, reports, args.title)
+                _write_json_output(report, args.output)
+                print(f"Investigation {report['session_id']} created with {len(report['steps'])} queued step(s)")
+                print("Planning only: no validation steps were executed.")
+                return 0
+            session = json.loads(Path(args.session).read_text(encoding="utf-8"))
+            if args.investigation_command == "next":
+                report = next_action(session)
+            elif args.investigation_command == "record":
+                evidence = json.loads(args.evidence_json) if args.evidence_json else None
+                report = record_result(session, args.step_id, args.outcome, args.note, evidence)
+            else:
+                report = investigation_report(session)
+            _write_json_output(report, args.output)
+            print(f"Investigation output written to {args.output}")
+            return 0
+        if args.command == "mcp-serve":
+            from agentsec.agent_api import capability_manifest, serve_stdio
+            if args.print_manifest:
+                print(json.dumps(capability_manifest(), indent=2, ensure_ascii=False))
+                return 0
+            return serve_stdio()
         if args.command == "knowledge":
             record = extract_knowledge(args.source, args.output)
             mappings = len(record.get("candidate_mappings", []))

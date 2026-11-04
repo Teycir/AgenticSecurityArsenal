@@ -1,0 +1,23 @@
+{
+  "name": "scope-authorization",
+  "description": "Validate written assessment scope before any target interaction.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "none",
+  "inputs": [
+    "scope manifest JSON",
+    "optional absolute HTTP(S) target"
+  ],
+  "outputs": [
+    "validated scope summary",
+    "allow/deny decision with reason"
+  ],
+  "interfaces": "agentsec scope-check; MCP scope_check",
+  "parallel_safety": "yes. This skill is a local validation step and performs no network interaction.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

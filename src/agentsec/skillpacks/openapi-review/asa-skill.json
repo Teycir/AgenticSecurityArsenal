@@ -1,0 +1,23 @@
+{
+  "name": "openapi-review",
+  "description": "Statically inspect a supplied OpenAPI JSON document and identify security review candidates.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "none",
+  "inputs": [
+    "OpenAPI JSON document"
+  ],
+  "outputs": [
+    "endpoint inventory",
+    "review candidates",
+    "unverified hypotheses"
+  ],
+  "interfaces": "agentsec openapi; MCP openapi_analyze",
+  "parallel_safety": "yes for independent documents or services.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

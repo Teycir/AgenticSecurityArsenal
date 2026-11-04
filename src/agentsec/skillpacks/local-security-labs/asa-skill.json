@@ -1,0 +1,22 @@
+{
+  "name": "local-security-labs",
+  "description": "Run deterministic synthetic scenarios to validate security reasoning and reporting.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline-synthetic",
+  "permission_profile": "none",
+  "inputs": [
+    "optional exact scenario ID"
+  ],
+  "outputs": [
+    "synthetic findings",
+    "scenario outcomes and limitations"
+  ],
+  "interfaces": "agentsec lab list/run; MCP local_lab_list/local_lab_run",
+  "parallel_safety": "yes. Labs are in-process simulations and do not contact external systems.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

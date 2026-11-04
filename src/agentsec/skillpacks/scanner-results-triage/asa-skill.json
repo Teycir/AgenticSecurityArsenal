@@ -1,0 +1,22 @@
+{
+  "name": "scanner-results-triage",
+  "description": "Normalize existing Nmap XML, Nuclei JSONL, and Burp XML exports into structured evidence.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "none",
+  "inputs": [
+    "scanner export file and exact format"
+  ],
+  "outputs": [
+    "normalized report JSON",
+    "source provenance and parsing limitations"
+  ],
+  "interfaces": "agentsec import-scan; MCP scan_result_import",
+  "parallel_safety": "yes. Parse separate files independently, then merge by explicit target identity.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

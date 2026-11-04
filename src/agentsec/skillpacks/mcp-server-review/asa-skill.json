@@ -1,0 +1,24 @@
+{
+  "name": "mcp-server-review",
+  "description": "Inventory and assess an MCP server interface without invoking tools or reading resource contents.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "passive-local-or-scoped-network",
+  "permission_profile": "scope-required-for-http",
+  "inputs": [
+    "local stdio server command OR exact remote MCP endpoint plus scope",
+    "optional bearer token supplied by environment variable"
+  ],
+  "outputs": [
+    "MCP inventory JSON",
+    "static findings via analyze",
+    "limitations and uninspected surfaces"
+  ],
+  "interfaces": "agentsec mcp-inspect; agentsec mcp-http-inspect; agentsec analyze; MCP mcp_inventory_analyze",
+  "parallel_safety": "inventory of independent servers may run in parallel. Do not concurrently launch the same stateful server unless its operator confirms that is safe.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}

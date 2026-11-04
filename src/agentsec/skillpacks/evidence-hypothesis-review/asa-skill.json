@@ -1,0 +1,23 @@
+{
+  "name": "evidence-hypothesis-review",
+  "description": "Generate cautious, explicitly unverified hypotheses from normalized assessment evidence.",
+  "version": "1.6.0",
+  "category": "security-assessment",
+  "execution_mode": "offline",
+  "permission_profile": "none",
+  "inputs": [
+    "normalized report JSON array"
+  ],
+  "outputs": [
+    "hypotheses with evidence references",
+    "safe validation suggestions",
+    "confidence and limitations"
+  ],
+  "interfaces": "agentsec hypotheses; MCP hypothesis_generate",
+  "parallel_safety": "yes for independent evidence partitions. Deduplicate and reconcile only after workers finish.",
+  "references": [
+    "../../docs/SKILLS.md",
+    "../../docs/RESULT_CONTRACT.md",
+    "../../AUTHORIZATION.md"
+  ]
+}
