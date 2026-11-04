@@ -1,12 +1,16 @@
-import json
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
-from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from agentsec.investigation import (
-    analyze_openapi, generate_hypotheses, ingest_burp_xml, ingest_nmap_xml,
-    ingest_nuclei_jsonl, scoped_http_probe,
+    analyze_openapi,
+    generate_hypotheses,
+    ingest_burp_xml,
+    ingest_nmap_xml,
+    ingest_nuclei_jsonl,
+    scoped_http_probe,
 )
 from agentsec.scope import ScopeError
 
@@ -68,7 +72,7 @@ def test_http_probe_requires_exact_scope_and_get_only():
 
 
 def test_new_mcp_capabilities_are_discoverable_and_callable():
-    from agentsec.agent_api import capability_definitions, call_capability, capability_manifest
+    from agentsec.agent_api import call_capability, capability_definitions, capability_manifest
     names = {item["name"] for item in capability_definitions()}
     assert {"http_get_probe", "openapi_analyze", "scan_result_import", "hypothesis_generate"} <= names
     assert capability_manifest()["version"] == "1.6.0"

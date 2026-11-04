@@ -186,9 +186,7 @@ def compare_assessments(
             change = "removed"
         elif old == new:
             change = "unchanged"
-        elif old == "fail" and new == "pass":
-            change = "improved"
-        elif old == "inconclusive" and new == "pass":
+        elif old == "fail" and new == "pass" or old == "inconclusive" and new == "pass":
             change = "improved"
         elif old == "pass" and new == "inconclusive":
             change = "degraded"

@@ -8,17 +8,28 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Any, Callable
+import tempfile
+from typing import Any
 
 from agentsec.catalog import filter_catalog, load_catalog
 from agentsec.findings import analyze_mcp_inventory
+from agentsec.investigation import (
+    analyze_openapi,
+    generate_hypotheses,
+    ingest_burp_xml,
+    ingest_nmap_xml,
+    ingest_nuclei_jsonl,
+    scoped_http_probe,
+)
+from agentsec.investigation_engine import (
+    create_investigation,
+    investigation_report,
+    next_action,
+    record_result,
+)
 from agentsec.labs import list_scenarios, run_labs
 from agentsec.planning import build_plan
 from agentsec.scope import load_scope, target_is_allowed
-from agentsec.investigation import (analyze_openapi, generate_hypotheses, ingest_burp_xml, ingest_nmap_xml, ingest_nuclei_jsonl, scoped_http_probe)
-from pathlib import Path
-import tempfile
-from agentsec.investigation_engine import create_investigation, next_action, record_result, investigation_report
 
 CATALOG_PATH = str(__import__("pathlib").Path(__file__).resolve().parents[2] / "catalog" / "techniques.json")
 
@@ -315,7 +326,7 @@ class MCPStdioServer:
                     "structuredContent": output,
                     "isError": False,
                 })
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - any capability failure must surface as an MCP error response
                 self._result(request_id, {
                     "content": [{"type": "text", "text": str(exc)}],
                     "isError": True,

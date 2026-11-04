@@ -1,13 +1,13 @@
 """v1.4 static importers, safe HTTP probe and evidence-led hypotheses."""
 from __future__ import annotations
+
 import json
-import re
 import ssl
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit
 
 from agentsec.scope import require_target_in_scope
 
@@ -110,15 +110,15 @@ def ingest_burp_xml(source: str) -> dict:
     raw=Path(source).read_text(encoding="utf-8") if Path(source).exists() else source
     try: root=ET.fromstring(raw)
     except ET.ParseError as exc: raise ValueError(f"Invalid Burp XML: {exc}") from exc
+    def val(issue, tag):
+        node=issue.find(tag)
+        return "".join(node.itertext()).strip() if node is not None else None
     issues=[]
     for issue in root.findall(".//issue"):
-        def val(tag):
-            node=issue.find(tag)
-            return "".join(node.itertext()).strip() if node is not None else None
-        issues.append({"name":val("name"),"severity":val("severity"),"confidence":val("confidence"),
-            "host":val("host"),"path":val("path"),"issue_type":val("type"),
-            "description":val("issueBackground") or val("issueDetail"),
-            "evidence":val("requestresponse")})
+        issues.append({"name":val(issue,"name"),"severity":val(issue,"severity"),"confidence":val(issue,"confidence"),
+            "host":val(issue,"host"),"path":val(issue,"path"),"issue_type":val(issue,"type"),
+            "description":val(issue,"issueBackground") or val(issue,"issueDetail"),
+            "evidence":val(issue,"requestresponse")})
     return {"status":"ok","source":"burp_xml","observations":issues,"count":len(issues),"network_access":False}
 
 

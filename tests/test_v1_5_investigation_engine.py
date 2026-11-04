@@ -5,7 +5,10 @@ import pytest
 
 from agentsec.agent_api import call_capability, capability_definitions, capability_manifest
 from agentsec.investigation_engine import (
-    create_investigation, investigation_report, next_action, record_result,
+    create_investigation,
+    investigation_report,
+    next_action,
+    record_result,
 )
 from agentsec.scope import ScopeError
 

@@ -1,5 +1,5 @@
-from agentsec.skills import get_skill, list_skills, validate_skills
 from agentsec.agent_api import call_capability, capability_definitions
+from agentsec.skills import get_skill, list_skills, validate_skills
 
 
 def test_skill_library_validates_and_lists_eight_skills():

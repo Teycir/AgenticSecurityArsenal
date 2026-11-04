@@ -10,8 +10,20 @@ from agentsec.assessment import compare_assessments, create_assessment, run_asse
 from agentsec.catalog import filter_catalog, load_catalog, render_catalog
 from agentsec.evaluations import list_evaluations, run_evaluations
 from agentsec.findings import analyze_mcp_inventory, compare_reports
-from agentsec.investigation import analyze_openapi, generate_hypotheses, ingest_burp_xml, ingest_nmap_xml, ingest_nuclei_jsonl, scoped_http_probe
-from agentsec.investigation_engine import create_investigation, next_action, record_result, investigation_report
+from agentsec.investigation import (
+    analyze_openapi,
+    generate_hypotheses,
+    ingest_burp_xml,
+    ingest_nmap_xml,
+    ingest_nuclei_jsonl,
+    scoped_http_probe,
+)
+from agentsec.investigation_engine import (
+    create_investigation,
+    investigation_report,
+    next_action,
+    record_result,
+)
 from agentsec.knowledge import extract_knowledge
 from agentsec.labs import list_scenarios, run_labs
 from agentsec.mcp_http import MCPHTTPError, inspect_http_server
