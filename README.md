@@ -1,3 +1,25 @@
+<!-- donation:eth:start -->
+<div align="center">
+
+## Support Development
+
+If this project helps your work, support ongoing maintenance and new features.
+
+**ETH Donation Wallet**  
+`0x11282eE5726B3370c8B480e321b3B2aA13686582`
+
+<a href="https://etherscan.io/address/0x11282eE5726B3370c8B480e321b3B2aA13686582">
+  <img src="publiceth.svg" alt="Ethereum donation QR code" width="220" />
+</a>
+
+_Scan the QR code or copy the wallet address above._
+
+</div>
+<!-- donation:eth:end -->
+
+
+<div align="center">
+
 # Agentic Security Arsenal
 
 A modular security assessment knowledge base and safe testing scaffold for **LLM applications, AI agents, MCP servers, tool integrations, RAG systems, and A2A workflows**.
@@ -126,7 +148,9 @@ agentsec compare baseline-findings.json current-findings.json --output regressio
 ```
 
 The analyzer emits stable rule IDs, severity, confidence, evidence, remediation guidance, and a human-validation status. Results are heuristic metadata signals, not proof of exploitability. Review findings before treating them as confirmed vulnerabilities.
-\n## Agent evaluations (v0.7.0)\n\nList synthetic evaluation scenarios with `agentsec eval list`. Evaluate a supplied evidence fixture using `agentsec eval run --evidence evidence.json --output evaluation.json`. The suite does not execute live agents or tools; missing evidence is marked inconclusive. See `docs/AGENT_EVALUATIONS.md`.\n
+## Agent evaluations (v0.7.0)
+
+List synthetic evaluation scenarios with `agentsec eval list`. Evaluate a supplied evidence fixture using `agentsec eval run --evidence evidence.json --output evaluation.json`. The suite does not execute live agents or tools; missing evidence is marked inconclusive. See `docs/AGENT_EVALUATIONS.md`.
 
 ## v1.0 knowledge → assessment workflow
 
