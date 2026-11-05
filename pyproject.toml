@@ -16,7 +16,8 @@ dependencies = []
 dev = ["pytest>=8.0", "ruff>=0.5"]
 
 [project.scripts]
-agentsec = "agentsec.cli:main"
+agentsec = "agentsec.cli:main"  # legacy alias, not exposed on PATH
+AgenticSecurityArsenal = "agentsec.cli:main"  # canonical name (avoids AgentSec Rust collision)
 
 [tool.setuptools]
 package-dir = {"" = "src"}

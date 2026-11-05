@@ -46,7 +46,7 @@ def _write_json_output(report: dict, destination: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="agentsec", description="Agentic Security Arsenal")
+    parser = argparse.ArgumentParser(description="Agentic Security Arsenal")
     sub = parser.add_subparsers(dest="command", required=True)
 
     catalog_parser = sub.add_parser("catalog", help="List techniques in the knowledge base")
